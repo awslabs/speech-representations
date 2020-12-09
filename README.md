@@ -5,9 +5,10 @@
 Models and code for deep learning representations developed by the AWS AI Speech team:
 
 - [DeCoAR (self-supervised contextual representations for speech recognition)](https://arxiv.org/abs/1912.01679)
-- **Coming soon:** BERTphone (phonetically-aware acoustic BERT for speaker and language recognition)
+- [BERTphone (phonetically-aware acoustic BERT for speaker and language recognition)](https://www.isca-speech.org/archive/Odyssey_2020/abstracts/93.html)
+- DeCoAR 2.0 (deep contextualized acoustic representation with vector quantization) (coming soon)
 
-We also support other pre-trained models, namely [wav2vec](https://github.com/pytorch/fairseq/tree/master/examples/wav2vec).
+We also support other pre-trained models, namely [wav2vec and wav2vec 2.0](https://github.com/pytorch/fairseq/tree/master/examples/wav2vec).
 
 
 ## Installation
@@ -20,7 +21,8 @@ We expect Python 3.6+. Our models are defined in MXNet; we may support export to
 ```sh
 pip install -e .
 pip install mxnet-mkl~=1.6.0   # ...or mxnet-cu102mkl for GPU w/ CUDA 10.2, etc.
-pip install torch fairseq      # optional; for featurizing with wav2vec
+pip install gluonnlp # optional; for featurizing with bertphone
+pip install torch fairseq      # optional; for featurizing with wav2vec, decaor 2.0
 ```
 
 
@@ -33,10 +35,14 @@ mkdir artifacts
 wget -qO- https://apache-mxnet.s3-us-west-2.amazonaws.com/gluon/models/decoar-encoder-29b8e2ac.zip | zcat > artifacts/decoar-encoder-29b8e2ac.params
 # For wav2vec trained on LibriSpeech (311M)
 wget -P artifacts/ https://dl.fbaipublicfiles.com/fairseq/wav2vec/wav2vec_large.pt
+# For wav2vec_2.0 trained on LibriSpeech (please download it from https://github.com/pytorch/fairseq/blob/master/examples/wav2vec/README.md)
+# For BertPhone_8KHz(λ=0.2) trained on Fisher
+wget -qO- https://apache-mxnet.s3-us-west-2.amazonaws.com/gluon/models/bertphone_fisher_02-87159543.zip | zcat > artifacts/bertphone_fisher_02-87159543.params
+# For Decoar 2.0 to be released
 ```
 We support featurizing individual files with the CLI:
 ```sh
-speech-reps featurize --model {decoar,wav2vec} --in-wav <input_file>.wav --out-npy <output_file>.npy
+speech-reps featurize --model {decoar,BertPhone_16KHz,wav2vec etc.} --in-wav <input_file>.wav --out-npy <output_file>.npy
 # --params <file>: load custom weights (otherwise use `artifacts/`)
 # --gpu <int>:     use GPU (otherwise use CPU)
 ```
@@ -67,7 +73,7 @@ If you found our package or pre-trained models useful, please cite the relevant 
   year      = {2020}
 }
 ```
-**BERTphone**
+**[BERTphone](https://www.isca-speech.org/archive/Odyssey_2020/abstracts/93.html)**
 ```
 @inproceedings{bertphone,
   author    = {Shaoshi Ling and Julian Salazar and Yuzong Liu and Katrin Kirchhoff},
