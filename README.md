@@ -42,7 +42,7 @@ wget -qO- https://apache-mxnet.s3-us-west-2.amazonaws.com/gluon/models/bertphone
 ```
 We support featurizing individual files with the CLI:
 ```sh
-speech-reps featurize --model {decoar,BertPhone_16KHz,wav2vec etc.} --in-wav <input_file>.wav --out-npy <output_file>.npy
+speech-reps featurize --model {decoar,bertphone,wav2vec etc.} --in-wav <input_file>.wav --out-npy <output_file>.npy
 # --params <file>: load custom weights (otherwise use `artifacts/`)
 # --gpu <int>:     use GPU (otherwise use CPU)
 ```
