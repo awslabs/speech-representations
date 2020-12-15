@@ -6,7 +6,7 @@ Models and code for deep learning representations developed by the AWS AI Speech
 
 - [DeCoAR (self-supervised contextual representations for speech recognition)](https://arxiv.org/abs/1912.01679)
 - [BERTphone (phonetically-aware acoustic BERT for speaker and language recognition)](https://www.isca-speech.org/archive/Odyssey_2020/abstracts/93.html)
-- DeCoAR 2.0 (deep contextualized acoustic representation with vector quantization) (coming soon)
+- [DeCoAR 2.0 (deep contextualized acoustic representation with vector quantization)](https://arxiv.org/abs/2012.06659)
 
 We also support other pre-trained models, namely [wav2vec and wav2vec 2.0](https://github.com/pytorch/fairseq/tree/master/examples/wav2vec).
 
@@ -81,5 +81,16 @@ If you found our package or pre-trained models useful, please cite the relevant 
   booktitle = {{Speaker Odyssey}},
   publisher = {{ISCA}},
   year      = {2020}
+}
+```
+**[DeCoAR 2.0](https://arxiv.org/abs/2012.06659)**
+```
+@misc{ling2020decoar,
+      title={DeCoAR 2.0: Deep Contextualized Acoustic Representations with Vector Quantization}, 
+      author={Shaoshi Ling and Yuzong Liu},
+      year={2020},
+      eprint={2012.06659},
+      archivePrefix={arXiv},
+      primaryClass={eess.AS}
 }
 ```
