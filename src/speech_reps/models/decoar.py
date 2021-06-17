@@ -1,33 +1,67 @@
-from mxnet import gluon
-from mxnet.gluon import nn, rnn
-import mxnet.ndarray as nd
+import torch
+import torch.nn as nn
+from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
+#-------------#
+
+class DeCoAR(nn.Module):
+    def __init__(self):
+        """
+            input_size: an int indicating the input feature size, e.g., 80 for Mel.
+            hidden_size: an int indicating the RNN hidden size.
+            num_layers: an int indicating the number of RNN layers.
+            dropout: a float indicating the RNN dropout rate.
+            residual: a bool indicating whether to apply residual connections.
+        """
+        super(DeCoAR, self).__init__()
+
+        self.embed = 80
+        d = 1024
+        self.encoder_layers = 4
+        self.post_extract_proj = nn.Linear(self.embed, d)
+
+        self.forward_lstm = nn.LSTM(input_size=d, hidden_size=d, num_layers=self.encoder_layers,
+                            batch_first=True, bidirectional=False)
+        self.backward_lstm = nn.LSTM(input_size=d, hidden_size=d, num_layers=self.encoder_layers,
+                            batch_first=True, bidirectional=False)
 
 
-class DeCoAR(gluon.Block):
+    def flipBatch(self, data, lengths):
+        assert data.shape[0] == len(lengths), "Dimension Mismatch!"
+        for i in range(data.shape[0]):
+            data[i, :lengths[i]] = data[i, :lengths[i]].flip(dims=[0])
 
-    def __init__(self, feature_size, num_embed, num_hidden,
-                 num_layers, dropout,  **kwargs):
-        super(DeCoAR, self).__init__(**kwargs)
+        return data
 
-        with self.name_scope():
-            self._label_size = feature_size
-            self.encoder = nn.Dense(num_embed, flatten=False)
-            self.rnn_forward = rnn.LSTM(num_hidden, num_layers, dropout=dropout,
-                           input_size=num_embed, bidirectional=False)
-            self.rnn_backward = rnn.LSTM(num_hidden, num_layers, dropout=dropout,
-                           input_size=num_embed, bidirectional=False)
+    def forward(self, features, padding_mask=None):
+        max_seq_len = features.shape[1]
+        features = self.post_extract_proj(features)
 
-    def forward(self, input, data_len):
-        hidden_forward, hidden_backward = self.begin_state(func=nd.zeros, batch_size=len(data_len), ctx=input.context)
-        x = self.encoder(input)
-        x_forward, hidden_forward = self.rnn_forward(x, hidden_forward)
-        x_reverse = nd.SequenceReverse(x, sequence_length=data_len, use_sequence_length=True,
-                                         axis=0)
-        x_backward, hidden_backward = self.rnn_backward(x_reverse, hidden_backward)
-        x_backward = nd.SequenceReverse(x_backward,
-                          sequence_length=data_len,
-                          use_sequence_length=True, axis=0)
-        return nd.concat(x_forward, x_backward, dim=2)
+        if padding_mask is not None:
+            extra = padding_mask.size(1) % features.size(1)
+            if extra > 0:
+                padding_mask = padding_mask[:, :-extra]
+            padding_mask = padding_mask.view(padding_mask.size(0), features.size(1), -1)
+            padding_mask = padding_mask.all(-1)
 
-    def begin_state(self, *args, **kwargs):
-        return self.rnn_forward.begin_state(*args, **kwargs), self.rnn_backward.begin_state(*args, **kwargs)
+        seq_lengths = (~padding_mask).sum(dim=-1).tolist()
+
+        packed_rnn_inputs = pack_padded_sequence(features, seq_lengths,
+                                                 batch_first=True,
+                                                 enforce_sorted=False)
+
+        packed_rnn_outputs, _ = self.forward_lstm(packed_rnn_inputs)
+        x_forward, _ = pad_packed_sequence(packed_rnn_outputs,
+                                   batch_first=True,
+                                   total_length=max_seq_len)
+
+        packed_rnn_inputs = pack_padded_sequence(self.flipBatch(features, seq_lengths), seq_lengths,
+                                                 batch_first=True,
+                                                 enforce_sorted=False)
+
+        packed_rnn_outputs, _ = self.backward_lstm(packed_rnn_inputs)
+        x_backward, _ = pad_packed_sequence(packed_rnn_outputs,
+                                   batch_first=True,
+                                   total_length=max_seq_len)
+        x_backward = self.flipBatch(x_backward, seq_lengths)
+
+        return torch.cat((x_forward, x_backward), dim=-1)
