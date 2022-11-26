@@ -8,6 +8,7 @@ Models and code for deep learning representations developed by the AWS AI Speech
 - [BERTphone (phonetically-aware acoustic BERT for speaker and language recognition)](https://www.isca-speech.org/archive/Odyssey_2020/abstracts/93.html)
 - [DeCoAR 2.0 (deep contextualized acoustic representation with vector quantization)](https://arxiv.org/abs/2012.06659)
 
+**NOTE: This repo is not actively maintained. For future experiments with DeCoAR and DeCoAR 2.0, we suggest using [the S3PRL speech toolkit](https://github.com/s3prl/s3prl), which has active and standardized featurizer/upstream/downstream wrappers for these models.**
 
 ## Installation
 
@@ -15,12 +16,14 @@ We provide a library and CLI to featurize speech utterances. We hope to release 
 
 [Kaldi](https://github.com/kaldi-asr/kaldi) should be installed to `kaldi/`, or `$KALDI_ROOT` should be set.
 
-We expect Python 3.6+. Our bertphone models are defined in MXNet and DeCoAR model is defined in Pytorch. Clone this repository, then:
+We expect Python 3.6+. The BERTphone model are defined in MXNet and our DeCoAR models are defined in Pytorch. Clone this repository, then:
 ```sh
 pip install -e .
+# For DeCoAR
+pip install torch fairseq
+# For BERTphone
 pip install mxnet-mkl~=1.6.0   # ...or mxnet-cu102mkl for GPU w/ CUDA 10.2, etc.
 pip install gluonnlp # optional; for featurizing with bertphone
-pip install torch fairseq
 ```
 
 
@@ -29,12 +32,13 @@ pip install torch fairseq
 First, download the model weights:
 ```sh
 mkdir artifacts
+cd artifacts
 # For DeCoAR trained on LibriSpeech (257M)
-wget https://speech-representation.s3.us-west-2.amazonaws.com/checkpoint_decoar.pt
-# For BertPhone_8KHz(λ=0.2) trained on Fisher
-wget -qO- https://apache-mxnet.s3-us-west-2.amazonaws.com/gluon/models/bertphone_fisher_02-87159543.zip | zcat > artifacts/bertphone_fisher_02-87159543.params
+wget https://github.com/awslabs/speech-representations/releases/download/decoar/checkpoint_decoar.pt
+# For BERTphone 8KHz (λ=0.2) trained on Fisher
+wget https://github.com/awslabs/speech-representations/releases/download/bertphone/bertphone_fisher_02-87159543.params
 # For Decoar 2.0:
-wget https://speech-representation.s3.us-west-2.amazonaws.com/checkpoint_decoar2.pt
+wget https://github.com/awslabs/speech-representations/releases/download/decoar2/checkpoint_decoar2.pt
 
 ```
 We support featurizing individual files with the CLI:
@@ -47,7 +51,7 @@ or in code:
 ```sh
 from speech_reps.featurize import DeCoARFeaturizer
 # Load the model on GPU 0
-featurizer = DeCoARFeaturizer('artifacts/decoar-encoder-29b8e2ac.params', gpu=0)
+featurizer = DeCoARFeaturizer('artifacts/checkpoint_decoar.pt', gpu=0)
 # Returns a (time, feature) NumPy array
 data = featurizer.file_to_feats('my_wav_file.wav')
 ```
